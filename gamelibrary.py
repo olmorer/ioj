@@ -21,7 +21,7 @@ def add_buttons(layout, pairs):
         btn.clicked.connect(func)
         layout.addWidget(btn)
 
-class GameDialog(QDialog):  # второе окно: добавление / изменение игры
+class GameDialog(QDialog): 
     def __init__(self, data=("", "", 2020, "", 0, "")):
         super().__init__()
         self.setWindowTitle("Игра")
@@ -61,7 +61,6 @@ class GameLibrary(QMainWindow):
         self.setWindowTitle("Game Library")
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)
-        # вкладка "Игры"
         games_layout, left, right_layout = QHBoxLayout(), QVBoxLayout(), QVBoxLayout()
         self.fav_only = QCheckBox("Только избранное")
         self.fav_only.stateChanged.connect(self.load_games)
@@ -82,14 +81,12 @@ class GameLibrary(QMainWindow):
         games_layout.addLayout(left)
         games_layout.addLayout(right_layout)
         self.tab("Игры", games_layout)
-        # вкладка "Чемпионаты"
         champ_layout, row = QVBoxLayout(), QHBoxLayout()
         self.champs_list = QListWidget()
         champ_layout.addWidget(self.champs_list)
         add_buttons(row, (("Создать чемпионат", self.add_champ), ("Удалить чемпионат", self.delete_champ)))
         champ_layout.addLayout(row)
         self.tab("Чемпионаты", champ_layout)
-        # вкладка "Участники"
         part_layout, row = QVBoxLayout(), QHBoxLayout()
         self.champ_box = QComboBox()
         self.champ_box.currentIndexChanged.connect(self.load_results)
@@ -118,7 +115,6 @@ class GameLibrary(QMainWindow):
         if item is None:
             self.statusBar().showMessage("Сначала выберите элемент в списке")
         return item.data(ID) if item else None
-    # ---------- игры ----------
     def load_games(self):
         self.games_list.clear()
         where = " WHERE fav = 1" if self.fav_only.isChecked() else ""
@@ -159,7 +155,6 @@ class GameLibrary(QMainWindow):
             run("DELETE FROM games WHERE id=?", (gid,))
             self.load_games()
             self.load_champs()
-    # ---------- чемпионаты ----------
     def load_champs(self):
         self.champs_list.clear()
         self.champ_box.clear()
@@ -189,7 +184,6 @@ class GameLibrary(QMainWindow):
             run("DELETE FROM results WHERE champ_id=?", (cid,))
             run("DELETE FROM champs WHERE id=?", (cid,))
             self.load_champs()
-    # ---------- участники и результаты ----------
     def load_results(self):
         rows = db.execute("SELECT id, player, score FROM results WHERE champ_id=? ORDER BY score DESC",
                           (self.champ_box.currentData(),)).fetchall()
@@ -216,14 +210,12 @@ class GameLibrary(QMainWindow):
             return self.statusBar().showMessage("Выберите участника в таблице")
         run("DELETE FROM results WHERE id=?", (self.table.item(row, 0).data(ID),))
         self.load_results()
-    # ---------- статистика ----------
     def show_stats(self):
         lines = []
         for cid, name in db.execute("SELECT id, name FROM champs"):
             win = db.execute("SELECT player, MAX(score) FROM results WHERE champ_id=?", (cid,)).fetchone()
             lines.append(f"{name}: победитель {win[0]} ({win[1]} очк.)" if win[0] else f"{name}: нет результатов")
         QMessageBox.information(self, "Статистика", "\n".join(lines) or "Чемпионатов пока нет")
-    # ---------- импорт / экспорт CSV ----------
     def import_games(self):
         path = QFileDialog.getOpenFileName(self, "Импорт игр", "", "CSV (*.csv)")[0]
         if not path:
